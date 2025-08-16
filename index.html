@@ -1,400 +1,937 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emoji Chaos Multiplayer</title>
+    <title>Multiplayer Emoji Chaos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background: #f0f0f0;
+        * {
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        #game-container {
+        
+        body {
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
             width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
         }
-        #emoji-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+        
+        .header {
+            background: linear-gradient(90deg, #ff7e5f, #feb47b);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .game-container {
+            padding: 30px;
+        }
+        
+        .screen {
+            display: none;
+        }
+        
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .lobby-screen, .waiting-screen, .game-screen, .game-over-screen {
+            text-align: center;
+        }
+        
+        .screen-title {
+            font-size: 2rem;
+            margin-bottom: 25px;
+            color: #ff7e5f;
+        }
+        
+        .input-group {
             margin: 20px 0;
         }
-        .emoji {
-            font-size: 30px;
-            background: #ffeb3b;
-            border-radius: 8px;
-            padding: 15px;
-            cursor: pointer;
-            transition: transform 0.1s;
+        
+        input {
+            padding: 12px 15px;
+            font-size: 1.1rem;
+            border: 2px solid #ddd;
+            border-radius: 50px;
+            width: 100%;
+            max-width: 300px;
+            transition: all 0.3s;
         }
-        .emoji:hover {
-            transform: scale(1.1);
+        
+        input:focus {
+            outline: none;
+            border-color: #ff7e5f;
+            box-shadow: 0 0 10px rgba(255, 126, 95, 0.3);
         }
-        .emoji.hidden {
-            visibility: hidden;
-        }
-        #score, #timer {
-            font-size: 24px;
-            margin: 10px 0;
-        }
-        #start-btn, #restart-btn {
-            padding: 10px 20px;
-            font-size: 18px;
-            background: #4CAF50;
+        
+        .btn {
+            background: linear-gradient(90deg, #ff7e5f, #feb47b);
             color: white;
             border: none;
-            border-radius: 5px;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
             cursor: pointer;
+            margin: 10px 5px;
+            transition: all 0.3s;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(255, 126, 95, 0.3);
         }
-        #start-btn:hover, #restart-btn:hover {
-            background: #45a049;
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(255, 126, 95, 0.4);
         }
-        #game-over {
-            display: none;
-            margin-top: 20px;
+        
+        .btn:active {
+            transform: translateY(0);
         }
-        #lobby, #game-screen {
-            display: block;
+        
+        .btn-secondary {
+            background: linear-gradient(90deg, #6e8efb, #a777e3);
+            box-shadow: 0 4px 10px rgba(110, 142, 251, 0.3);
         }
-        #players-list {
+        
+        .btn-secondary:hover {
+            box-shadow: 0 6px 15px rgba(110, 142, 251, 0.4);
+        }
+        
+        .btn-small {
+            padding: 8px 20px;
+            font-size: 1rem;
+        }
+        
+        .players-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+        }
+        
+        .player-card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            width: 140px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+        }
+        
+        .player-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .player-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            margin: 0 auto 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+        }
+        
+        .player-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .room-code {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: 5px;
+            color: #ff7e5f;
             margin: 20px 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background: #f8f9fa;
+            padding: 10px 20px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+        }
+        
+        .info-card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .info-card h3 {
+            color: #6e8efb;
+            margin-bottom: 5px;
+        }
+        
+        .info-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ff7e5f;
+        }
+        
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 30px auto;
+            max-width: 500px;
+        }
+        
+        .emoji-cell {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            font-size: 2.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            aspect-ratio: 1/1;
+        }
+        
+        .emoji-cell:hover {
+            transform: scale(1.05);
+            background: #e9ecef;
+        }
+        
+        .emoji-cell.hidden {
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: transparent;
+        }
+        
+        .emoji-cell.hidden:hover {
+            background: linear-gradient(135deg, #5a7cfa, #8f5fe3);
+        }
+        
+        .scoreboard {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 30px auto;
+            max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .score-title {
+            font-size: 1.5rem;
+            color: #ff7e5f;
+            margin-bottom: 20px;
+        }
+        
+        .player-score {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .player-score:last-child {
+            border-bottom: none;
+        }
+        
+        .highlight {
+            color: #ff7e5f;
+            font-weight: 700;
+        }
+        
+        .instructions {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 30px 0;
             text-align: left;
         }
-        .player {
-            padding: 5px;
-            margin: 5px 0;
-            background: #e9e9e9;
-            border-radius: 5px;
+        
+        .instructions h3 {
+            color: #6e8efb;
+            margin-bottom: 10px;
         }
-        #room-code {
-            font-weight: bold;
-            font-size: 24px;
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
             margin: 10px 0;
+            line-height: 1.5;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            background: linear-gradient(90deg, #6e8efb, #a777e3);
+        }
+        
+        .github-link {
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        
+        .github-link:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .emoji-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+            
+            .emoji-cell {
+                padding: 15px;
+                font-size: 2rem;
+            }
+            
+            .player-card {
+                width: 120px;
+            }
+            
+            .game-info {
+                flex-direction: column;
+                gap: 15px;
+            }
         }
     </style>
 </head>
 <body>
-    <div id="game-container">
-        <h1>🎮 Emoji Chaos Multiplayer</h1>
-        
-        <!-- LOBBY SCREEN -->
-        <div id="lobby">
-            <button id="create-room-btn">Create Room</button>
-            <p>or</p>
-            <input type="text" id="room-code-input" placeholder="Enter Room Code">
-            <button id="join-room-btn">Join Room</button>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-gamepad"></i> Multiplayer Emoji Chaos</h1>
+            <p>Match emojis with friends in real-time!</p>
         </div>
         
-        <!-- WAITING SCREEN -->
-        <div id="waiting-screen">
-            <h2>Waiting for players...</h2>
-            <p>Room Code: <span id="room-code">----</span></p>
-            <div id="players-list"></div>
-            <button id="start-game-btn" disabled>Start Game (Min 2 Players)</button>
+        <div class="game-container">
+            <!-- Lobby Screen -->
+            <div id="lobby" class="screen lobby-screen active">
+                <h2 class="screen-title">Welcome to Emoji Chaos!</h2>
+                
+                <div class="input-group">
+                    <input type="text" id="player-name" placeholder="Enter your name" value="Player">
+                </div>
+                
+                <button id="create-room-btn" class="btn">
+                    <i class="fas fa-plus-circle"></i> Create Room
+                </button>
+                
+                <p style="margin: 20px 0; font-size: 1.2rem;">OR</p>
+                
+                <div class="input-group">
+                    <input type="text" id="room-code-input" placeholder="Enter Room Code">
+                </div>
+                
+                <button id="join-room-btn" class="btn btn-secondary">
+                    <i class="fas fa-sign-in-alt"></i> Join Room
+                </button>
+                
+                <div class="instructions">
+                    <h3><i class="fas fa-info-circle"></i> How to Play:</h3>
+                    <ul>
+                        <li>Create a room or join an existing one with a code</li>
+                        <li>Wait for other players to join</li>
+                        <li>Memorize the emojis before they disappear!</li>
+                        <li>Click on the emojis that match the target emoji</li>
+                        <li>Earn points for correct matches, lose points for wrong ones</li>
+                        <li>The player with the highest score wins!</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Waiting Screen -->
+            <div id="waiting" class="screen waiting-screen">
+                <h2 class="screen-title">Waiting for Players</h2>
+                
+                <div class="room-code">
+                    <span id="room-code-display">ABCD</span>
+                </div>
+                
+                <p>Share this code with friends to join your game</p>
+                
+                <div class="players-list" id="players-list">
+                    <!-- Player cards will be added here -->
+                </div>
+                
+                <button id="start-game-btn" class="btn" disabled>
+                    <i class="fas fa-play-circle"></i> Start Game
+                </button>
+                <p id="min-players">(Minimum 2 players required)</p>
+            </div>
+            
+            <!-- Game Screen -->
+            <div id="game" class="screen game-screen">
+                <h2 class="screen-title">Find the Matching Emojis!</h2>
+                
+                <div class="game-info">
+                    <div class="info-card">
+                        <h3>Time Left</h3>
+                        <div class="value" id="timer">30s</div>
+                    </div>
+                    <div class="info-card">
+                        <h3>Your Score</h3>
+                        <div class="value" id="score">0</div>
+                    </div>
+                    <div class="info-card">
+                        <h3>Target Emoji</h3>
+                        <div class="value" id="target-emoji">🎮</div>
+                    </div>
+                </div>
+                
+                <div class="emoji-grid" id="emoji-grid">
+                    <!-- Emoji cells will be added here -->
+                </div>
+                
+                <div class="scoreboard">
+                    <h3 class="score-title"><i class="fas fa-trophy"></i> Scoreboard</h3>
+                    <div id="scoreboard-content">
+                        <!-- Player scores will be added here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Game Over Screen -->
+            <div id="game-over" class="screen game-over-screen">
+                <h2 class="screen-title">Game Over!</h2>
+                
+                <div class="info-card" style="max-width: 400px; margin: 20px auto;">
+                    <h3>Winner</h3>
+                    <div class="value" id="winner-name">Player 1</div>
+                </div>
+                
+                <div class="scoreboard">
+                    <h3 class="score-title">Final Scores</h3>
+                    <div id="final-scores">
+                        <!-- Final scores will be added here -->
+                    </div>
+                </div>
+                
+                <button id="play-again-btn" class="btn">
+                    <i class="fas fa-redo"></i> Play Again
+                </button>
+                
+                <button id="new-game-btn" class="btn btn-secondary">
+                    <i class="fas fa-home"></i> Back to Lobby
+                </button>
+            </div>
         </div>
         
-        <!-- GAME SCREEN -->
-        <div id="game-screen">
-            <div id="score">Score: 0</div>
-            <div id="timer">Time left: 30s</div>
-            <div id="emoji-grid"></div>
-            <div id="scoreboard"></div>
-        </div>
-        
-        <!-- GAME OVER SCREEN -->
-        <div id="game-over">
-            <h2>Game Over!</h2>
-            <div id="final-results"></div>
-            <button id="restart-btn">Play Again</button>
+        <div class="footer">
+            <p>Multiplayer Emoji Chaos Game</p>
+            <a href="https://github.com/yourusername/emoji-chaos" class="github-link" target="_blank">
+                <i class="fab fa-github"></i> View on GitHub
+            </a>
         </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-    
     <script>
-        // === FIREBASE SETUP ===
-        const firebaseConfig = {
-            apiKey: "AIzaSyBOnROc4E0Gg1C5r8NdvOpzuiycOdapyAg",
-            authDomain: "emojichaos.firebaseapp.com",
-            projectId: "emojichaos",
-            storageBucket: "emojichaos.firebasestorage.app",
-            messagingSenderId: "306591395474",
-            appId: "1:306591395474:web:bd261956112fdc668f404b",
-            measurementId: "G-ELX7RDKCFW"
+        // Game configuration
+        const config = {
+            emojis: ["😀", "😂", "😍", "🤔", "🎮", "🍕", "🚀", "🐱", "🌈", "🎲", "🌟", "🍦", "⚽", "🎸", "🍎"],
+            initialTime: 30,
+            showTime: 2000,
+            minPlayers: 2,
+            maxPlayers: 8,
+            pointsPerMatch: 5,
+            pointsPerMismatch: -2
         };
-
         
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        
-        // === GAME VARIABLES ===
-        const emojis = ["😀", "😂", "😍", "🤔", "🎮", "🍕", "🚀", "🐱", "🌈", "🎲"];
-        let playerId = Math.random().toString(36).substring(7);
-        let playerName = `Player_${Math.floor(Math.random() * 1000)}`;
-        let roomCode = "1234";
-        let gameInterval;
-        let timerInterval;
-        let timeLeft = 30;
-        let emojiSpeed = 1500;
+        // Game state
+        let gameState = {
+            screen: 'lobby',
+            playerId: null,
+            playerName: 'Player',
+            roomCode: '',
+            players: [],
+            gameStarted: false,
+            timeLeft: config.initialTime,
+            score: 0,
+            targetEmoji: '',
+            emojiGrid: [],
+            interval: null,
+            timerInterval: null
+        };
         
         // DOM Elements
-        const lobbyScreen = document.getElementById("lobby");
-        const waitingScreen = document.getElementById("waiting-screen");
-        const gameScreen = document.getElementById("game-screen");
-        const gameOverScreen = document.getElementById("game-over");
-        const createRoomBtn = document.getElementById("create-room-btn");
-        const joinRoomBtn = document.getElementById("join-room-btn");
-        const roomCodeInput = document.getElementById("room-code-input");
-        const startGameBtn = document.getElementById("start-game-btn");
-        const roomCodeDisplay = document.getElementById("room-code");
-        const playersList = document.getElementById("players-list");
-        const emojiGrid = document.getElementById("emoji-grid");
-        const scoreDisplay = document.getElementById("score");
-        const timerDisplay = document.getElementById("timer");
-        const scoreboard = document.getElementById("scoreboard");
-        const finalResults = document.getElementById("final-results");
-        const restartBtn = document.getElementById("restart-btn");
+        const screens = {
+            lobby: document.getElementById('lobby'),
+            waiting: document.getElementById('waiting'),
+            game: document.getElementById('game'),
+            gameOver: document.getElementById('game-over')
+        };
         
-        // === LOBBY LOGIC ===
-        createRoomBtn.addEventListener("click", createRoom);
-        joinRoomBtn.addEventListener("click", joinRoom);
-        startGameBtn.addEventListener("click", startGame);
-        restartBtn.addEventListener("click", resetGame);
+        const elements = {
+            playerName: document.getElementById('player-name'),
+            roomCodeInput: document.getElementById('room-code-input'),
+            roomCodeDisplay: document.getElementById('room-code-display'),
+            playersList: document.getElementById('players-list'),
+            startGameBtn: document.getElementById('start-game-btn'),
+            minPlayers: document.getElementById('min-players'),
+            timer: document.getElementById('timer'),
+            score: document.getElementById('score'),
+            targetEmoji: document.getElementById('target-emoji'),
+            emojiGrid: document.getElementById('emoji-grid'),
+            scoreboard: document.getElementById('scoreboard-content'),
+            winnerName: document.getElementById('winner-name'),
+            finalScores: document.getElementById('final-scores')
+        };
         
-        function createRoom() {
-            roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-            roomCodeDisplay.textContent = roomCode;
+        // Initialize the game
+        function initGame() {
+            // Generate unique player ID
+            gameState.playerId = 'player-' + Math.random().toString(36).substring(2, 9);
             
-            // Create room in Firestore
-            db.collection("rooms").doc(roomCode).set({
-                players: [{ id: playerId, name: playerName, score: 0 }],
-                gameStarted: false,
-                currentEmojis: [],
-                timeLeft: 30
+            // Set player name
+            elements.playerName.addEventListener('input', function() {
+                gameState.playerName = this.value || 'Player';
             });
             
-            switchToWaitingScreen();
-            listenForPlayers();
-        }
-        
-        function joinRoom() {
-            roomCode = roomCodeInput.value.trim().toUpperCase();
-            if (!roomCode) return alert("Enter a room code!");
+            // Button event listeners
+            document.getElementById('create-room-btn').addEventListener('click', createRoom);
+            document.getElementById('join-room-btn').addEventListener('click', joinRoom);
+            document.getElementById('start-game-btn').addEventListener('click', startGame);
+            document.getElementById('play-again-btn').addEventListener('click', playAgain);
+            document.getElementById('new-game-btn').addEventListener('click', backToLobby);
             
-            // Check if room exists
-            db.collection("rooms").doc(roomCode).get().then(doc => {
-                if (doc.exists) {
-                    roomCodeDisplay.textContent = roomCode;
-                    const roomData = doc.data();
-                    
-                    // Add player to room
-                    db.collection("rooms").doc(roomCode).update({
-                        players: [...roomData.players, { id: playerId, name: playerName, score: 0 }]
-                    });
-                    
-                    switchToWaitingScreen();
-                    listenForPlayers();
-                    
-                    // If game already started, sync up
-                    if (roomData.gameStarted) {
-                        startGame();
-                    }
-                } else {
-                    alert("Room not found!");
-                }
-            });
+            // Show lobby screen
+            showScreen('lobby');
         }
         
-        function listenForPlayers() {
-            db.collection("rooms").doc(roomCode).onSnapshot(doc => {
-                const roomData = doc.data();
-                if (!roomData) return;
-                
-                // Update player list
-                playersList.innerHTML = "";
-                roomData.players.forEach(player => {
-                    const playerEl = document.createElement("div");
-                    playerEl.className = "player";
-                    playerEl.textContent = player.name;
-                    playersList.appendChild(playerEl);
-                });
-                
-                // Enable start button if enough players
-                startGameBtn.disabled = roomData.players.length < 2;
-                
-                // If game started, update UI
-                if (roomData.gameStarted && !gameScreen.style.display) {
-                    startGame();
-                }
-                
-                // Update scoreboard during game
-                if (gameScreen.style.display === "block") {
-                    updateScoreboard(roomData.players);
-                }
-                
-                // Handle game over
-                if (roomData.timeLeft <= 0) {
-                    endGame(roomData.players);
-                }
-            });
-        }
-        
-        // === GAME LOGIC ===
-        function startGame() {
-            // Tell Firestore the game has started
-            db.collection("rooms").doc(roomCode).update({
-                gameStarted: true,
-                timeLeft: 30
+        // Show a specific screen
+        function showScreen(screenName) {
+            // Hide all screens
+            Object.values(screens).forEach(screen => {
+                screen.classList.remove('active');
             });
             
-            switchToGameScreen();
+            // Show requested screen
+            screens[screenName].classList.add('active');
+            gameState.screen = screenName;
             
-            // Start game loop
-            gameInterval = setInterval(spawnEmojis, 2000);
-            timerInterval = setInterval(updateTimer, 1000);
-        }
-        
-        function spawnEmojis() {
-            // Clear previous emojis
-            emojiGrid.innerHTML = "";
-            
-            // Pick a random emoji to match
-            const correctEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-            
-            // Fill grid with random emojis
-            for (let i = 0; i < 8; i++) {
-                const emoji = document.createElement("div");
-                emoji.className = "emoji";
-                
-                // 50% chance to be the correct emoji
-                const displayedEmoji = (i < 4 && Math.random() > 0.5) ? correctEmoji : 
-                                      emojis[Math.floor(Math.random() * emojis.length)];
-                emoji.textContent = displayedEmoji;
-                
-                emoji.addEventListener("click", () => handleEmojiClick(emoji, displayedEmoji === correctEmoji));
-                emojiGrid.appendChild(emoji);
+            // Perform screen-specific setup
+            if (screenName === 'waiting') {
+                updatePlayersList();
             }
+        }
+        
+        // Create a new room
+        function createRoom() {
+            gameState.playerName = elements.playerName.value || 'Player';
+            
+            // Generate room code (4 uppercase letters)
+            gameState.roomCode = '';
+            for (let i = 0; i < 4; i++) {
+                gameState.roomCode += String.fromCharCode(65 + Math.floor(Math.random() * 26));
+            }
+            
+            // Create player object
+            const player = {
+                id: gameState.playerId,
+                name: gameState.playerName,
+                score: 0,
+                avatar: getRandomEmoji()
+            };
+            
+            // Add to players array
+            gameState.players = [player];
+            
+            // Update UI
+            elements.roomCodeDisplay.textContent = gameState.roomCode;
+            updatePlayersList();
+            
+            // Enable start button if min players reached
+            elements.startGameBtn.disabled = gameState.players.length < config.minPlayers;
+            
+            // Show waiting screen
+            showScreen('waiting');
+            
+            // For demo purposes - add mock players
+            setTimeout(() => {
+                addMockPlayer('Alex 🎮');
+                addMockPlayer('Sam 🐱');
+                addMockPlayer('Jordan 🌈');
+            }, 1500);
+        }
+        
+        // Add a mock player for demo
+        function addMockPlayer(name) {
+            if (gameState.players.length >= config.maxPlayers) return;
+            
+            const player = {
+                id: 'mock-' + Math.random().toString(36).substring(2, 9),
+                name: name,
+                score: 0,
+                avatar: getRandomEmoji(),
+                isMock: true
+            };
+            
+            gameState.players.push(player);
+            updatePlayersList();
+            
+            // Enable start button if min players reached
+            elements.startGameBtn.disabled = gameState.players.length < config.minPlayers;
+        }
+        
+        // Join an existing room
+        function joinRoom() {
+            const roomCode = elements.roomCodeInput.value.trim().toUpperCase();
+            if (roomCode.length !== 4) {
+                alert('Please enter a valid 4-letter room code');
+                return;
+            }
+            
+            gameState.playerName = elements.playerName.value || 'Player';
+            gameState.roomCode = roomCode;
+            
+            // Create player object
+            const player = {
+                id: gameState.playerId,
+                name: gameState.playerName,
+                score: 0,
+                avatar: getRandomEmoji()
+            };
+            
+            // For demo purposes - add to existing players
+            gameState.players = [
+                { id: 'player1', name: 'Alex 🎮', score: 0, avatar: '🎮', isMock: true },
+                { id: 'player2', name: 'Sam 🐱', score: 0, avatar: '🐱', isMock: true },
+                player
+            ];
+            
+            // Update UI
+            elements.roomCodeDisplay.textContent = gameState.roomCode;
+            updatePlayersList();
+            
+            // Show waiting screen
+            showScreen('waiting');
+            
+            // For demo - enable start button after a delay
+            setTimeout(() => {
+                elements.startGameBtn.disabled = false;
+                elements.minPlayers.textContent = 'Game will start soon...';
+            }, 2000);
+        }
+        
+        // Update players list in waiting room
+        function updatePlayersList() {
+            elements.playersList.innerHTML = '';
+            
+            gameState.players.forEach(player => {
+                const playerCard = document.createElement('div');
+                playerCard.className = 'player-card';
+                playerCard.innerHTML = `
+                    <div class="player-avatar">${player.avatar}</div>
+                    <div class="player-name">${player.name}</div>
+                `;
+                elements.playersList.appendChild(playerCard);
+            });
+        }
+        
+        // Start the game
+        function startGame() {
+            // Reset game state
+            gameState.gameStarted = true;
+            gameState.timeLeft = config.initialTime;
+            gameState.score = 0;
+            
+            // Update UI
+            elements.score.textContent = '0';
+            elements.timer.textContent = `${gameState.timeLeft}s`;
+            
+            // Show game screen
+            showScreen('game');
+            
+            // Start the timer
+            startTimer();
+            
+            // Start the game loop
+            startGameLoop();
+            
+            // Update scoreboard
+            updateScoreboard();
+        }
+        
+        // Start the game timer
+        function startTimer() {
+            clearInterval(gameState.timerInterval);
+            
+            gameState.timerInterval = setInterval(() => {
+                gameState.timeLeft--;
+                elements.timer.textContent = `${gameState.timeLeft}s`;
+                
+                if (gameState.timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+        
+        // Main game loop
+        function startGameLoop() {
+            clearInterval(gameState.interval);
+            
+            // Generate new emoji grid
+            generateEmojiGrid();
+            
+            // Set interval for next round
+            gameState.interval = setInterval(generateEmojiGrid, config.showTime + 2000);
+        }
+        
+        // Generate the emoji grid
+        function generateEmojiGrid() {
+            // Clear existing grid
+            elements.emojiGrid.innerHTML = '';
+            
+            // Select target emoji
+            gameState.targetEmoji = getRandomEmoji();
+            elements.targetEmoji.textContent = gameState.targetEmoji;
+            
+            // Create emoji array
+            const emojiCount = 12;
+            gameState.emojiGrid = [];
+            
+            // Add target emojis (about 1/3 of the grid)
+            const targetCount = Math.floor(emojiCount / 3);
+            for (let i = 0; i < targetCount; i++) {
+                gameState.emojiGrid.push(gameState.targetEmoji);
+            }
+            
+            // Fill with random emojis
+            while (gameState.emojiGrid.length < emojiCount) {
+                let randomEmoji = getRandomEmoji();
+                // Avoid having too many of the same emoji
+                if (gameState.emojiGrid.filter(e => e === randomEmoji).length < 3) {
+                    gameState.emojiGrid.push(randomEmoji);
+                }
+            }
+            
+            // Shuffle the emoji array
+            shuffleArray(gameState.emojiGrid);
+            
+            // Create grid cells
+            gameState.emojiGrid.forEach((emoji, index) => {
+                const cell = document.createElement('div');
+                cell.className = 'emoji-cell';
+                cell.textContent = emoji;
+                cell.dataset.index = index;
+                cell.dataset.emoji = emoji;
+                
+                cell.addEventListener('click', () => handleEmojiClick(index));
+                
+                elements.emojiGrid.appendChild(cell);
+            });
             
             // Hide emojis after delay
             setTimeout(() => {
-                const allEmojis = document.querySelectorAll(".emoji");
-                allEmojis.forEach(e => e.classList.add("hidden"));
-            }, emojiSpeed);
-            
-            // Increase speed over time
-            emojiSpeed = Math.max(500, emojiSpeed - 50);
+                const cells = document.querySelectorAll('.emoji-cell');
+                cells.forEach(cell => {
+                    cell.classList.add('hidden');
+                    cell.textContent = '?';
+                });
+            }, config.showTime);
         }
         
-        function handleEmojiClick(emojiElement, isCorrect) {
-            if (emojiElement.classList.contains("hidden")) return;
+        // Handle emoji click
+        function handleEmojiClick(index) {
+            const cell = document.querySelector(`.emoji-cell[data-index="${index}"]`);
             
-            // Update score in Firestore
-            db.collection("rooms").doc(roomCode).get().then(doc => {
-                const roomData = doc.data();
-                const players = roomData.players.map(player => {
-                    if (player.id === playerId) {
-                        return {
-                            ...player,
-                            score: isCorrect ? player.score + 1 : Math.max(0, player.score - 1)
-                        };
-                    }
-                    return player;
-                });
+            // If emojis are hidden, ignore click
+            if (cell.classList.contains('hidden')) return;
+            
+            const clickedEmoji = cell.dataset.emoji;
+            
+            // Check if match
+            if (clickedEmoji === gameState.targetEmoji) {
+                // Correct match
+                gameState.score += config.pointsPerMatch;
+                cell.style.backgroundColor = '#c8f7c5';
                 
-                db.collection("rooms").doc(roomCode).update({ players });
-            });
+                // Update mock players' scores
+                updateMockPlayers();
+            } else {
+                // Incorrect match
+                gameState.score += config.pointsPerMismatch;
+                if (gameState.score < 0) gameState.score = 0;
+                cell.style.backgroundColor = '#ffd1d1';
+            }
             
-            // Visual feedback
-            emojiElement.style.background = isCorrect ? "#4CAF50" : "#F44336";
+            // Update UI
+            elements.score.textContent = gameState.score;
+            
+            // Update player score in players array
+            const playerIndex = gameState.players.findIndex(p => p.id === gameState.playerId);
+            if (playerIndex !== -1) {
+                gameState.players[playerIndex].score = gameState.score;
+                updateScoreboard();
+            }
+            
+            // Reset cell color after delay
             setTimeout(() => {
-                emojiElement.style.background = "#FFEB3B";
-            }, 300);
+                cell.style.backgroundColor = '';
+            }, 500);
         }
         
-        function updateTimer() {
-            db.collection("rooms").doc(roomCode).get().then(doc => {
-                const roomData = doc.data();
-                const newTime = roomData.timeLeft - 1;
-                
-                db.collection("rooms").doc(roomCode).update({
-                    timeLeft: newTime
-                });
-                
-                timerDisplay.textContent = `Time left: ${newTime}s`;
-                
-                if (newTime <= 0) {
-                    clearInterval(gameInterval);
-                    clearInterval(timerInterval);
+        // Update mock players' scores for demo
+        function updateMockPlayers() {
+            gameState.players.forEach(player => {
+                if (player.isMock) {
+                    // Mock players get random points
+                    player.score += Math.floor(Math.random() * 6) - 1;
+                    if (player.score < 0) player.score = 0;
                 }
             });
-        }
-        
-        function updateScoreboard(players) {
-            scoreboard.innerHTML = "<h3>Scoreboard</h3>";
-            players.sort((a, b) => b.score - a.score).forEach(player => {
-                const playerEl = document.createElement("div");
-                playerEl.className = "player";
-                playerEl.textContent = `${player.name}: ${player.score}`;
-                scoreboard.appendChild(playerEl);
-            });
-        }
-        
-        function endGame(players) {
-            switchToGameOverScreen();
             
-            finalResults.innerHTML = "<h3>Final Results</h3>";
-            players.sort((a, b) => b.score - a.score).forEach((player, index) => {
-                const playerEl = document.createElement("div");
-                playerEl.className = "player";
-                playerEl.textContent = `${index + 1}. ${player.name}: ${player.score}`;
-                finalResults.appendChild(playerEl);
+            updateScoreboard();
+        }
+        
+        // Update the scoreboard
+        function updateScoreboard() {
+            // Sort players by score (descending)
+            const sortedPlayers = [...gameState.players].sort((a, b) => b.score - a.score);
+            
+            elements.scoreboard.innerHTML = '';
+            
+            sortedPlayers.forEach((player, index) => {
+                const playerScore = document.createElement('div');
+                playerScore.className = 'player-score';
+                
+                const playerNameSpan = document.createElement('span');
+                playerNameSpan.textContent = player.name;
+                
+                const playerScoreSpan = document.createElement('span');
+                playerScoreSpan.textContent = player.score;
+                
+                // Highlight current player
+                if (player.id === gameState.playerId) {
+                    playerNameSpan.classList.add('highlight');
+                    playerScoreSpan.classList.add('highlight');
+                }
+                
+                // Add trophy for leader
+                if (index === 0) {
+                    playerNameSpan.innerHTML = '🏆 ' + playerNameSpan.innerHTML;
+                }
+                
+                playerScore.appendChild(playerNameSpan);
+                playerScore.appendChild(playerScoreSpan);
+                
+                elements.scoreboard.appendChild(playerScore);
             });
         }
         
-        function resetGame() {
-            // Reset room (or leave it for new players)
-            db.collection("rooms").doc(roomCode).update({
-                gameStarted: false,
-                timeLeft: 30,
-                players: [{ id: playerId, name: playerName, score: 0 }]
+        // End the game
+        function endGame() {
+            clearInterval(gameState.interval);
+            clearInterval(gameState.timerInterval);
+            
+            // Find winner
+            const sortedPlayers = [...gameState.players].sort((a, b) => b.score - a.score);
+            const winner = sortedPlayers[0];
+            
+            // Update UI
+            elements.winnerName.textContent = winner.name;
+            
+            // Display final scores
+            elements.finalScores.innerHTML = '';
+            sortedPlayers.forEach((player, index) => {
+                const playerScore = document.createElement('div');
+                playerScore.className = 'player-score';
+                
+                playerScore.innerHTML = `
+                    <span>${index + 1}. ${player.name} ${player.id === gameState.playerId ? '(You)' : ''}</span>
+                    <span>${player.score} points</span>
+                `;
+                
+                elements.finalScores.appendChild(playerScore);
             });
             
-            switchToWaitingScreen();
+            // Show game over screen
+            showScreen('game-over');
         }
         
-        // === SCREEN MANAGEMENT ===
-        function switchToWaitingScreen() {
-            lobbyScreen.style.display = "none";
-            gameScreen.style.display = "none";
-            gameOverScreen.style.display = "none";
-            waitingScreen.style.display = "block";
+        // Play again
+        function playAgain() {
+            // Reset scores
+            gameState.players.forEach(player => {
+                player.score = 0;
+            });
+            
+            // Start new game
+            startGame();
         }
         
-        function switchToGameScreen() {
-            lobbyScreen.style.display = "none";
-            waitingScreen.style.display = "none";
-            gameOverScreen.style.display = "none";
-            gameScreen.style.display = "block";
+        // Go back to lobby
+        function backToLobby() {
+            gameState.players = gameState.players.filter(p => p.id === gameState.playerId);
+            showScreen('lobby');
         }
         
-        function switchToGameOverScreen() {
-            gameScreen.style.display = "none";
-            gameOverScreen.style.display = "block";
+        // Helper function to get a random emoji
+        function getRandomEmoji() {
+            return config.emojis[Math.floor(Math.random() * config.emojis.length)];
         }
+        
+        // Helper function to shuffle an array
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+        // Initialize the game when page loads
+        window.addEventListener('DOMContentLoaded', initGame);
     </script>
 </body>
 </html>
-
-
-
